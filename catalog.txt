@@ -1,0 +1,16 @@
+remium Trains
+CAT01|AC1|20|5|5|2500.00
+CAT01|CC|40|10|10|1500.00
+CAT01|SLP|60|15|15|800.00
+CAT01|LOW|10|Senior Citizens and Differently Abled
+t
+CAT02|AC1|15|4|4|2000.00
+CAT02|CC|30|8|8|1200.00
+CAT02|SLP|50|12|12|650.00
+CAT02|LOW|8|Senior Citizens and Differently Abled
+ains
+CAT03|AC1|8|3|3|1500.00
+CAT03|CC|24|6|6|900.00
+CAT03|SLP|40|10|10|450.00
+CAT03|LOW|6|Senior Citizens and Differently Abled
+ 
