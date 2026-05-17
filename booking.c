@@ -3,6 +3,8 @@
 #include <string.h>
 #include "structs.h"
 #include "booking.h"
+#include "pricing.h"
+#include "authentication.h"
 
 // Updates the catalog file (reduces seat count by 1)
 // Also marks train as Not_Available if seats reach 0
@@ -99,17 +101,7 @@ void book_ticket(int trainNum) {
         return;
     }
 
-    // Step 4: Dynamic pricing based on how full the train is
-    finalPrice = basePrice;
-    if (fTot <= 10) {
-        finalPrice = basePrice * 1.15;
-        printf("[SYSTEM]: 80%% Occupancy reached. Price: Rs. %.2f (+15%%)\n", finalPrice);
-    } else if (fTot <= 25) {
-        finalPrice = basePrice * 1.10;
-        printf("[SYSTEM]: 50%% Occupancy reached. Price: Rs. %.2f (+10%%)\n", finalPrice);
-    }
-
-    // Step 5: Get passenger details
+    // Step 4: Get passenger details
     printf("Passenger Name: ");
     while(getchar() != '\n');
     fgets(pName, 50, stdin);
@@ -117,18 +109,58 @@ void book_ticket(int trainNum) {
 
     printf("Age: ");
     scanf("%d", &age);
-    if (age > 60) printf("[NOTE]: Senior Citizen Quota - Lower Deck assigned.\n");
+    if (age > 60) printf("[NOTE]: Senior Citizen - Lower Deck assigned.\n");
+    if (age < 5)  printf("[NOTE]: Child below 5 - No separate seat.\n");
 
     printf("Guardian Phone Number: ");
     scanf("%s", guardianPhone);
 
-    // Step 6: Generate PNR and save ticket to file
+    // Step 5: Seat type preference
+    char seatType;
+    printf("Seat Preference (W=Window / A=Aisle / N=None): ");
+    scanf(" %c", &seatType);
+
+    // Step 6: Travel date (needed for tatkal and festival check)
+    int travelDay, travelMonth, bookingDay, bookingMonth;
+    printf("Enter Travel Date (DD MM): ");
+    scanf("%d %d", &travelDay, &travelMonth);
+    printf("Enter Today's Date (DD MM): ");
+    scanf("%d %d", &bookingDay, &bookingMonth);
+
+    // Step 7: Get username in plain text for loyalty check
+    char plainName[50];
+    strcpy(plainName, currentUser.username);
+    decryptText(plainName);
+
+    // Step 8: Calculate full price using pricing module
+    struct PriceBreakdown bd;
+    finalPrice = calculate_price(basePrice, fTot,
+                                 travelDay, travelMonth,
+                                 bookingDay, bookingMonth,
+                                 seatType, age,
+                                 plainName, &bd);
+
+    // Step 9: Show the full price breakdown to user
+    show_price_breakdown(&bd);
+
+    // Step 10: Ask user to confirm before booking
+    int confirm;
+    printf("\nConfirm booking? (1=Yes / 0=No): ");
+    scanf("%d", &confirm);
+    if (confirm == 0) {
+        printf("\n[INFO]: Booking cancelled by user.\n");
+        return;
+    }
+
+    // Step 11: Generate PNR and save ticket
+    // Format: PNR|Name|Age|TrainNum|Class|GuardianPhone|Price|TravelDay|TravelMonth
     pnr = 100000 + (rand() % 900000);
     tp = fopen("ticket.txt", "a");
-    fprintf(tp, "%d|%s|%d|%d|%s|%s|%.2f\n", pnr, pName, age, trainNum, classChoice, guardianPhone, finalPrice);
+    fprintf(tp, "%d|%s|%d|%d|%s|%s|%.2f|%d|%d\n",
+            pnr, pName, age, trainNum, classChoice, guardianPhone, finalPrice, travelDay, travelMonth);
     fclose(tp);
 
-    // Step 7: Update catalog and train availability
+    // Step 12: Update catalog and train availability
     update_catalog_and_train(catID, classChoice, trainNum, fTot);
 
     printf("\n========================================");
